@@ -15,6 +15,13 @@ class Redactor:
             r"\b(male|female|man|woman|boy|girl|gentleman|lady|mrs\.|ms\.|mr\.|sir|ma’am|madam|)\b": "person",
         }
 
+    def clean(self, dataset_name: str):
+        if "gender" in dataset_name.lower():
+            return self.clean_gender
+
+        else:
+            return self.clean_university
+
     def clean_university(self, input: str) -> str:
         """
         Example: Studied Genetics at The Good University to enhance skills.
