@@ -4,9 +4,9 @@ import os
 import torch
 from pandas import DataFrame
 from sklearn.metrics import accuracy_score, classification_report
+from torch.optim import AdamW
 from torch.utils.data import Dataset
 from transformers import (
-    AdamW,
     AutoModelForSequenceClassification,
     AutoTokenizer,
     Trainer,
@@ -23,8 +23,13 @@ class TextDataset(Dataset):
         self.labels = labels
 
     def __getitem__(self, idx):
-        # Return dictionary of input IDs, attention mask, and label (simulating a collate function)
-        item = {key: torch.tensor(val[idx]) for key, val in self.encodings.items()}
+        # Use clone().detach() for proper tensor construction
+        item = {
+            key: val[idx].clone().detach()
+            if isinstance(val[idx], torch.Tensor)
+            else torch.tensor(val[idx])
+            for key, val in self.encodings.items()
+        }
         item["labels"] = torch.tensor(self.labels[idx].tolist())
         return item
 
@@ -95,13 +100,13 @@ class BertClassifier:
 
         training_args = TrainingArguments(
             output_dir="./results",
-            evaluation_strategy="steps",
+            eval_strategy="steps",
             max_steps=1200,
             per_device_train_batch_size=4,
             bf16=True,  # Enable mixed precision
             logging_dir="./logs",  # Directory for storing logs
             logging_steps=300,  # Log every 250 steps
-            save_steps=600,  # Save checkpoint every 500 steps
+            save_steps=1200,  # Save checkpoint every 500 steps
             load_best_model_at_end=True,
             metric_for_best_model="accuracy",
             greater_is_better=True,
