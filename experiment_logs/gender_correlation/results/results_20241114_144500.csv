@@ -1,0 +1,3 @@
+model_name,dataset_name,is_redacted,accuracy,precision,recall,f1,timestamp,fold
+BERT,gender_correlation,False,1.0,1.0,1.0,1.0,2024-11-14T14:44:01.181478,
+BERT,gender_correlation,True,0.7205,0.8109477693902996,0.7205,0.6943278965924524,2024-11-14T14:45:00.150217,

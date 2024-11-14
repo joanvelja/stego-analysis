@@ -1,0 +1,3 @@
+model_name,dataset_name,is_redacted,accuracy,precision,recall,f1,timestamp,fold
+BERT,uni,False,1.0,1.0,1.0,1.0,2024-11-14T15:00:12.128361,
+BERT,uni,True,0.51,0.5323312696949124,0.51,0.405300874210782,2024-11-14T15:01:11.577876,

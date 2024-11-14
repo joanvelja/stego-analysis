@@ -10,17 +10,11 @@ class Redactor:
 
         # Replacement rules for various categories
         self.gender_replacements = {
-            r"\bhe\b|\bhim\b|\bhis\b": "they",
-            r"\bshe\b|\bher\b|\bhers\b": "they",
-            r"\b(male|female|man|woman|boy|girl|gentleman|lady|mrs\.|ms\.|mr\.|sir|ma’am|madam|)\b": "person",
+            r"\b(he|him|his|He|Him)\b": "they",
+            r"\b(she|her|hers|She|Her)\b": "they",
+            r"\b(his|hers|His|Hers)\b": "their",
+            r" \b(male|female|man|woman|boy|girl|gentleman|lady|mrs\.|ms\.|mr\.|sir|ma'am|madam)\b": "",
         }
-
-    def clean(self, dataset_name: str):
-        if "gender" in dataset_name.lower():
-            return self.clean_gender
-
-        else:
-            return self.clean_university
 
     def clean_university(self, input: str) -> str:
         """
@@ -32,18 +26,31 @@ class Redactor:
         text = re.sub(self.university_pattern, "university", input, flags=re.IGNORECASE)
         return text
 
-    def clean_gender(self, input: str) -> str:
-        """
-        Example: This male has studied Astronomy and is a good communicator.
-        Expected output: This person has studied Astronomy and is a good communicator.
+    def gender_neutralize(self, text):
+        # Dictionary for replacements
+        replacements = {
+            r"\b(male|female)\b": "person",
+            r"\b(he|she)\b": "they",
+            r"\b(his|her)\b": "their",
+            r"\b(him)\b": "them",
+        }
 
-        2-fold pattern:
-        1) Removes male/female/boy/girl/... with 'person'
-        2) Removes pronouns he/she with 'them'
-        """
+        # Apply replacements
+        for pattern, replacement in replacements.items():
+            text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
 
-        # Apply replacement patterns
-        for pattern, replacement in self.gender_replacements.items():
-            text = re.sub(pattern, replacement, input, flags=re.IGNORECASE)
+        # Handle specific cases like "A male/female applicant" or "A Female applicant"
+        text = re.sub(
+            r"\bA\s+(?:male|female)\s+applicant",
+            "An applicant",
+            text,
+            flags=re.IGNORECASE,
+        )
+
+        # Handle cases where gender is followed by a comma
+        text = re.sub(r"\b(male|female),\s*", "person, ", text, flags=re.IGNORECASE)
+
+        # Handle cases where gender is at the beginning of the sentence
+        text = re.sub(r"^(?:male|female)\s*", "person ", text, flags=re.IGNORECASE)
 
         return text

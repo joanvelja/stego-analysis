@@ -101,7 +101,7 @@ class BertClassifier:
         training_args = TrainingArguments(
             output_dir="./results",
             eval_strategy="steps",
-            max_steps=1200,
+            max_steps=600,
             per_device_train_batch_size=4,
             bf16=True,  # Enable mixed precision
             logging_dir="./logs",  # Directory for storing logs
