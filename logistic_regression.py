@@ -7,24 +7,22 @@ from sklearn.metrics import accuracy_score, classification_report
 
 
 class LogisticRegressionWrapper:
-    def __init__(self, redacted: bool = False) -> None:
+    def __init__(self) -> None:
         # Vectorize text using simple CountVectorizer
         self.vectorizer = CountVectorizer()
-        self.redacted = redacted
 
-        self.key = "input_redacted" if self.redacted else "input"
+    def prep_train(self) -> None:
+        self.X_train_vect = self.vectorizer.fit_transform(self.train_df[self.key])
 
-    def prep_train(self, data) -> None:
-        self.X_train_vect = self.vectorizer.fit_transform(self.train_df["key"])
+    def prep_test(self) -> None:
+        self.X_test_vect = self.vectorizer.transform(self.test_df[self.key])
 
-    def prep_test(self, data) -> None:
-        self.X_test_vect = self.vectorizer.transform(self.test_df["key"])
-
-    def fit(self, train_df: DataFrame) -> None:
+    def fit(self, train_df: DataFrame, redacted: bool = False) -> None:
         self.train_df = train_df
+        self.key = "input_redacted" if redacted else "input"
 
         # Vectorize data for LR
-        self.prep_train(self.train_df)
+        self.prep_train()
 
         # Train a Logistic Regression model
         self.model = LogisticRegression(random_state=42)
@@ -35,7 +33,7 @@ class LogisticRegressionWrapper:
     ) -> Tuple[float, Dict] | None:
         # Vectorize data for prediction
         self.test_df = test_df
-        self.prep_test(self.prep_test)
+        self.prep_test()
 
         # Make predictions on test data
         y_pred = self.model.predict(self.X_test_vect)
@@ -52,3 +50,6 @@ class LogisticRegressionWrapper:
         print(report)
 
         return accuracy, report
+
+    def reset(self) -> None:
+        self.__init__()
