@@ -1,3 +1,6 @@
+import gc
+import os
+
 import torch
 from pandas import DataFrame
 from sklearn.metrics import accuracy_score, classification_report
@@ -51,11 +54,8 @@ class BertClassifier:
         )
 
     def prepare_data(
-        self, train_df: DataFrame, test_df: DataFrame, redacted: bool = False
+        self,
     ):
-        self.train_df = train_df
-        self.test_df = test_df
-        self.key = "input_redacted" if redacted else "input"
         self.train_encodings = self.tokenizer(
             list(self.train_df[self.key]),
             truncation=True,
@@ -87,7 +87,12 @@ class BertClassifier:
             "f1": report["weighted avg"]["f1-score"],
         }
 
-    def train(self, **kwargs):
+    def train(self, train_df: DataFrame, test_df: DataFrame, redacted: bool = False):
+        self.train_df = train_df
+        self.test_df = test_df
+        self.key = "input_redacted" if redacted else "input"
+        self.prepare_data()
+
         training_args = TrainingArguments(
             output_dir="./results",
             evaluation_strategy="steps",
@@ -118,3 +123,58 @@ class BertClassifier:
 
     def evaluate(self):
         return self.trainer.evaluate()
+
+    def reset(self):
+        """
+        Saves the current model state, cleans up memory, and reinitializes the classifier.
+        This is useful for training multiple iterations or when memory needs to be freed.
+        """
+
+        # Create directory if it doesn't exist
+        os.makedirs("model_checkpoints", exist_ok=True)
+
+        # Save current model state if it exists and has been trained
+        if hasattr(self, "trainer") and self.trainer is not None:
+            checkpoint_path = os.path.join("model_checkpoints", "last_model_state")
+            self.trainer.save_model(checkpoint_path)
+
+            # Clean up trainer
+            del self.trainer
+            self.trainer = None
+
+        # Clean up datasets
+        if hasattr(self, "train_dataset"):
+            del self.train_dataset
+        if hasattr(self, "test_dataset"):
+            del self.test_dataset
+
+        # Clean up encodings
+        if hasattr(self, "train_encodings"):
+            del self.train_encodings
+        if hasattr(self, "test_encodings"):
+            del self.test_encodings
+
+        # Clean up dataframes
+        if hasattr(self, "train_df"):
+            del self.train_df
+        if hasattr(self, "test_df"):
+            del self.test_df
+
+        # Move model to CPU before deletion if it's on GPU
+        if hasattr(self, "model"):
+            self.model.cpu()
+            del self.model
+
+        # Clean up tokenizer
+        if hasattr(self, "tokenizer"):
+            del self.tokenizer
+
+        # Clear CUDA cache if available
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
+        # Force garbage collection
+        gc.collect()
+
+        # Reinitialize the classifier
+        self.__init__()

@@ -1,3 +1,4 @@
+from bert_classifier import BertClassifier
 from data import DataPrep
 from logistic_regression import LogisticRegressionWrapper
 
@@ -11,6 +12,8 @@ def main(dataset_name: str, redacted: bool):
     lr.reset()
     lr.fit(dp.train_df, redacted=False)  # Should yield 100% acc
     accuracy, report = lr.predict(dp.test_df)
+
+    bc = BertClassifier()
 
 
 if __name__ == "__main__":
